@@ -7,9 +7,9 @@ yarn start
 
 Three browser tabs will automatically open
 
-**NOTE: This sample will fail to run properly as written.  That is the purpose of this sample.  To demonstrate problems with using [promised based dynamic remotes](https://webpack.js.org/concepts/module-federation/#promise-based-dynamic-remotes)** when having a self reference.
+**NOTE: This sample will fail to run properly as written, on the master branch at time of last commit.  That is the purpose of this sample: to demonstrate problems with using [promised based dynamic remotes](https://webpack.js.org/concepts/module-federation/#promise-based-dynamic-remotes) when having a self reference.  The problem is resolved on this branch**
 
-# Problem description
+# Original Problem description
 The original sample code used remotes defined in this type of format:
 ```
 module.exports = {
@@ -59,6 +59,9 @@ In the webpack.config.js, the reference to the home remote is switched from a ha
 ```
 In my experience (not demonstrated here) this works great until a module references itself (demonstrated here).  At that point in time, an infinite loop results due to the self reference.  Guidance on how to adjust webpack.remoteLoader.config.js so that it can handle a self reference would be greatly appreciated.
 
+
+# Problem resolution
+The problem is resolved by introducing a cache that is checked prior to fetching the same remote repeatedly.  The cached value is used to return the promised get/set object for subsequent calls
 
 # Lineage
 - Update of example code from [Practical Module Federation Book](https://module-federation.myshopify.com/products/practical-module-federation), from the Fully Federated Federated Site [example](https://github.com/jherr/practical-module-federation-20/tree/main/part3-advanced/full-site-federation)

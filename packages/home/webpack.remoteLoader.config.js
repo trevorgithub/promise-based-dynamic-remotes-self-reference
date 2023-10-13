@@ -5,20 +5,33 @@ const remoteLoaderHelper = (remoteName, remoteModuleUrl, customErrorLogger) => {
 
   const errorFormatter = (e) => (e instanceof Error ? `(${e.message})` : "");
 
+  const getCommon = (request) => {
+    try {
+      return window[remoteName].get(request);
+    } catch (e) {
+      logError(
+        `Unable to get ${request} for ${remoteName} ${errorFormatter(e)}`
+      );
+      return undefined;
+    }
+  };
+
   const successProxy = () => ({
-    get: (request) => {
-      try {
-        return window[remoteName].get(request);
-      } catch (e) {
-        logError(
-          `Unable to get ${request} for ${remoteName} ${errorFormatter(e)}`
-        );
-        return undefined;
-      }
-    },
+    get: (request) => getCommon(request),
     init: (arg) => {
+      const url = remoteModuleUrl;
+      const remoteUrl = `${url}/remoteEntry.js`;
+      const componentCacheKey = `${remoteUrl}-${remoteName}`;
       try {
-        return window[remoteName].init(arg);
+        if (!window.__gr_component_cache__[componentCacheKey]) {
+          window.__gr_component_cache__[componentCacheKey] = {
+            get: (request) => getCommon(request),
+            init: (arg) => undefined
+          }
+          return window[remoteName].init(arg);
+        } else {
+          return undefined;
+        } 
       } catch (e) {
         logError(
           `Remote container ${remoteName} may already be initialized ${errorFormatter(
@@ -31,8 +44,14 @@ const remoteLoaderHelper = (remoteName, remoteModuleUrl, customErrorLogger) => {
   });
 
   return (resolve, reject) => {
+    window.__gr_component_cache__ = window.__gr_component_cache__ || {};
     const url = remoteModuleUrl;
     const remoteUrl = `${url}/remoteEntry.js`;
+    const componentCacheKey = `${remoteUrl}-${remoteName}`;
+    if (window.__gr_component_cache__[componentCacheKey]) {
+      resolve(window.__gr_component_cache__[componentCacheKey]);
+      return;
+    }
 
     const script = document.createElement("script");
     script.src = remoteUrl;
